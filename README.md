@@ -91,6 +91,10 @@ A lógica de negócio fica isolada em `src/` (testável e executável fora do Ai
 `python -m src.pipeline`); a DAG é responsável apenas por orquestração — uma separação
 que facilita testes unitários e reuso.
 
+![Execução da DAG no Airflow — três tasks em sequência](docs/airflow_dag_execucao.png)
+*Execução real da DAG `etl_indicadores_economicos` rodando no Airflow (Docker), com as
+três tarefas encadeadas e finalizadas com sucesso (`success`).*
+
 ## Como rodar
 
 ### Opção 1 — Stack completa com Docker (Airflow + Postgres + dashboard)
@@ -102,7 +106,7 @@ cd pipeline-etl-indicadores
 docker compose up -d
 ```
 
-- Airflow UI: http://localhost:8080 (usuário `admin`, senha `admin`)
+- Airflow UI: http://localhost:8081 (usuário `admin`, senha `admin`)
 - Ative a DAG `etl_indicadores_economicos` e dispare uma execução manual
 - Data warehouse (Postgres): `localhost:5434` (banco `indicadores`, usuário `etl_user`)
 

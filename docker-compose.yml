@@ -70,7 +70,7 @@ services:
     environment:
       <<: *airflow-env
     ports:
-      - "8080:8080"
+      - "8081:8080"
     volumes:
       - ./dags:/opt/airflow/dags
       - ./src:/opt/airflow/src
