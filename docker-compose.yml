@@ -1,0 +1,87 @@
+x-airflow-env: &airflow-env
+  AIRFLOW__CORE__EXECUTOR: LocalExecutor
+  AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres-airflow/airflow
+  AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+  AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+  # credenciais do data warehouse, consumidas por src/config.py dentro das tasks da DAG
+  DW_HOST: postgres-dw
+  DW_PORT: "5432"
+  DW_NAME: indicadores
+  DW_USER: etl_user
+  DW_PASSWORD: etl_pass
+  PYTHONPATH: /opt/airflow
+
+services:
+  # banco de metadados do Airflow (estado das DAGs, runs, logs etc.)
+  postgres-airflow:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - airflow_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      retries: 5
+
+  # data warehouse alvo do pipeline ETL (camadas bronze / silver / gold)
+  postgres-dw:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: etl_user
+      POSTGRES_PASSWORD: etl_pass
+      POSTGRES_DB: indicadores
+    ports:
+      - "5434:5432"
+    volumes:
+      - dw_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "etl_user"]
+      interval: 5s
+      retries: 5
+
+  airflow-init:
+    image: apache/airflow:2.10.5-python3.11
+    depends_on:
+      postgres-airflow:
+        condition: service_healthy
+    environment:
+      <<: *airflow-env
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - airflow db migrate && airflow users create --username admin --password admin --firstname Rafael --lastname Taveira --role Admin --email admin@example.com
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./src:/opt/airflow/src
+      - ./requirements.txt:/opt/airflow/requirements.txt
+
+  # webserver + scheduler em um único container (modo "standalone leve") — suficiente para
+  # demonstração local; em produção, cada componente roda em seu próprio serviço/réplica.
+  airflow:
+    image: apache/airflow:2.10.5-python3.11
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+      postgres-dw:
+        condition: service_healthy
+    environment:
+      <<: *airflow-env
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./src:/opt/airflow/src
+      - ./requirements.txt:/opt/airflow/requirements.txt
+      - airflow_logs:/opt/airflow/logs
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - "pip install --no-cache-dir -r /opt/airflow/requirements.txt && (airflow scheduler &) && airflow webserver"
+
+volumes:
+  airflow_db_data:
+  airflow_logs:
+  dw_data:

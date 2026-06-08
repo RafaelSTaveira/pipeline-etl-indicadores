@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+.env
+.streamlit/secrets.toml
+
+# volumes do airflow gerados em runtime
+logs/
+plugins/
