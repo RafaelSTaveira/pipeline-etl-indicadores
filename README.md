@@ -5,8 +5,7 @@ API pública, organiza-os em um data warehouse PostgreSQL com arquitetura em cam
 (Bronze → Silver → Gold), orquestra tudo com **Apache Airflow** e expõe o resultado
 em um dashboard interativo — tudo containerizado com **Docker**.
 
-🔗 **Repositório:** _adicionar após publicação_
-🔗 **Dashboard ao vivo:** _adicionar após publicação (opcional)_
+🔗 **Repositório:** https://github.com/RafaelSTaveira/pipeline-etl-indicadores
 
 ## Por que este projeto
 
